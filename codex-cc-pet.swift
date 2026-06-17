@@ -139,10 +139,33 @@ final class JobWatcher {
 
 // MARK: - 宠物视图
 
-/// 渲染宠物:半透明圆角气泡 + 大 emoji + 状态文字;动画走 Core Animation。
+/// 状态药丸的语义配色(取自设计稿)
+enum PillKind {
+    case neutral, info, success, danger
+    var bg: NSColor {
+        switch self {
+        case .neutral: return NSColor(srgbRed: 0.227, green: 0.247, blue: 0.290, alpha: 1)
+        case .info:    return NSColor(srgbRed: 0.184, green: 0.290, blue: 0.420, alpha: 1)
+        case .success: return NSColor(srgbRed: 0.122, green: 0.302, blue: 0.200, alpha: 1)
+        case .danger:  return NSColor(srgbRed: 0.353, green: 0.153, blue: 0.188, alpha: 1)
+        }
+    }
+    var fg: NSColor {
+        switch self {
+        case .neutral: return NSColor(srgbRed: 0.682, green: 0.706, blue: 0.745, alpha: 1)
+        case .info:    return NSColor(srgbRed: 0.620, green: 0.773, blue: 1.000, alpha: 1)
+        case .success: return NSColor(srgbRed: 0.494, green: 0.886, blue: 0.659, alpha: 1)
+        case .danger:  return NSColor(srgbRed: 1.000, green: 0.604, blue: 0.651, alpha: 1)
+        }
+    }
+}
+
+/// 渲染宠物:渐变圆角卡片 + emoji + 话术文字 + 底部状态药丸;动画走 Core Animation。
 final class PetView: NSView {
     private let face = NSTextField(labelWithString: "🐤")
     private let label = NSTextField(labelWithString: "摸鱼中")
+    private let pill = NSTextField(labelWithString: "")
+    private let gradient = CAGradientLayer()
     private var celebrateTimer: Timer?
     /// 是否正在播放瞬时态(搞定/崩了)动画;期间不被常规轮询打断
     private(set) var isTransient = false
@@ -155,15 +178,15 @@ final class PetView: NSView {
         layer?.borderWidth = 1
         layer?.borderColor = NSColor.white.withAlphaComponent(0.10).cgColor
 
-        // 原生毛玻璃背景(vibrancy),比纯色板精致;圆角由父层 masksToBounds 裁切
-        let blur = NSVisualEffectView(frame: bounds)
-        blur.autoresizingMask = [.width, .height]
-        blur.material = .hudWindow
-        blur.blendingMode = .behindWindow
-        blur.state = .active
-        addSubview(blur)
+        // 渐变卡片背景(顶浅底深),贴合设计稿
+        gradient.colors = [
+            NSColor(srgbRed: 0.212, green: 0.231, blue: 0.275, alpha: 1).cgColor,
+            NSColor(srgbRed: 0.149, green: 0.165, blue: 0.200, alpha: 1).cgColor,
+        ]
+        gradient.frame = bounds
+        layer?.insertSublayer(gradient, at: 0)
 
-        face.font = .systemFont(ofSize: 44)
+        face.font = .systemFont(ofSize: 42)
         face.alignment = .center
         face.backgroundColor = .clear
         face.isBezeled = false
@@ -179,8 +202,18 @@ final class PetView: NSView {
         label.cell?.truncatesLastVisibleLine = true // 折到上限后末行省略号
         addSubview(label)
 
-        setCaption("摸鱼中")
-        startBob(duration: 2.4) // 默认摸鱼呼吸
+        // 底部状态药丸
+        pill.alignment = .center
+        pill.backgroundColor = .clear
+        pill.isBezeled = false
+        pill.isEditable = false
+        pill.wantsLayer = true
+        pill.layer?.cornerRadius = 10
+        pill.layer?.masksToBounds = true
+        pill.font = .systemFont(ofSize: 10.5, weight: .semibold)
+        addSubview(pill)
+
+        apply(.idle) // 设默认表情/文案/药丸/动画
     }
 
     required init?(coder: NSCoder) { fatalError("not used") }
@@ -196,15 +229,50 @@ final class PetView: NSView {
             .foregroundColor: NSColor.white.withAlphaComponent(0.88),
             .paragraphStyle: p,
         ])
+        layoutContent() // 文字行数变化时整体重新居中
+    }
+
+    /// 设置状态药丸:文案 + 语义配色
+    func setPill(_ text: String, kind: PillKind) {
+        pill.isHidden = false
+        pill.stringValue = text
+        pill.textColor = kind.fg
+        pill.layer?.backgroundColor = kind.bg.cgColor
+        positionPill()
+    }
+
+    func hidePill() { pill.isHidden = true }
+
+    /// 按文字宽度定药丸尺寸,底部居中
+    private func positionPill() {
+        let w = ceil(pill.attributedStringValue.size().width) + 22
+        pill.frame = NSRect(x: (bounds.width - w) / 2, y: 12, width: w, height: 20)
     }
 
     override func layout() {
         super.layout()
-        // 显式垂直结构:上边距 → emoji → 间隙 → 话术文字,避免图标文字贴一起
-        let topPad: CGFloat = 16, emojiH: CGFloat = 48, gap: CGFloat = 18, botPad: CGFloat = 14
-        face.frame = NSRect(x: 0, y: bounds.height - topPad - emojiH, width: bounds.width, height: emojiH)
-        let labelTop = face.frame.minY - gap
-        label.frame = NSRect(x: 18, y: botPad, width: bounds.width - 36, height: max(0, labelTop - botPad))
+        gradient.frame = bounds
+        positionPill()
+        layoutContent()
+    }
+
+    /// [emoji + 话术] 作为整体,垂直居中于药丸上方区域;多行话术也保持整体居中。
+    private func layoutContent() {
+        let sidePad: CGFloat = 16
+        let capWidth = bounds.width - 2 * sidePad
+        let measured = label.attributedStringValue.boundingRect(
+            with: NSSize(width: capWidth, height: 200),
+            options: [.usesLineFragmentOrigin, .usesFontLeading]).height
+        let capH = min(ceil(measured), 56) // 话术最多约 3 行
+
+        let emojiH: CGFloat = 44, gap: CGFloat = 4
+        let zoneLow: CGFloat = 42         // 药丸区上沿(药丸 y12+高20+间隙10)
+        let zoneHigh = bounds.height - 6  // 顶部留白
+        let blockH = emojiH + gap + capH
+        let blockBottom = (zoneLow + zoneHigh) / 2 - blockH / 2
+
+        label.frame = NSRect(x: sidePad, y: blockBottom, width: capWidth, height: capH)
+        face.frame = NSRect(x: 0, y: blockBottom + capH + gap, width: bounds.width, height: emojiH)
     }
 
     /// 应用情绪:切换表情/文案/动画。done 和 failed 是瞬时态,播完回到 idle。
@@ -213,15 +281,15 @@ final class PetView: NSView {
         switch mood {
         case .idle:
             isTransient = false
-            face.stringValue = "🐤"; setCaption("摸鱼中")
+            face.stringValue = "🐤"; setCaption("摸鱼中"); setPill("无任务", kind: .neutral)
             startBob(duration: 2.4)
         case .working(let n):
             isTransient = false
-            face.stringValue = "🐤"; setCaption(n > 1 ? "干活 ×\(n)" : "干活中")
+            face.stringValue = "🐤"; setCaption(n > 1 ? "干活 ×\(n)" : "干活中"); setPill("运行中", kind: .info)
             startBob(duration: 0.9)
         case .done:
             isTransient = true
-            face.stringValue = "🎉"; setCaption("搞定!")
+            face.stringValue = "🎉"; setCaption("搞定!"); setPill("completed", kind: .success)
             popOnce()
             // 5s 后自动回摸鱼(若期间没有新事件)
             celebrateTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: false) { [weak self] _ in
@@ -229,7 +297,7 @@ final class PetView: NSView {
             }
         case .failed:
             isTransient = true
-            face.stringValue = "😵"; setCaption("崩了")
+            face.stringValue = "😵"; setCaption("崩了"); setPill("failed", kind: .danger)
             shakeOnce()
             celebrateTimer = Timer.scheduledTimer(withTimeInterval: 6, repeats: false) { [weak self] _ in
                 self?.apply(.idle)
@@ -276,7 +344,7 @@ final class PetView: NSView {
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var panel: NSPanel!
-    private let pet = PetView(frame: NSRect(x: 0, y: 0, width: 236, height: 150))
+    private let pet = PetView(frame: NSRect(x: 0, y: 0, width: 230, height: 172))
     private let watcher = JobWatcher()
     private var timer: Timer?
     /// 上一轮应用的情绪键,避免同情绪重复 apply 而重置动画
@@ -332,8 +400,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             pet.setCaption(r.activity ?? (r.running > 1 ? "干活 ×\(r.running)" : "干活中"))
         } else {
             if lastMoodKey != "idle" { pet.apply(.idle); lastMoodKey = "idle" }
-            // 区分:有插件数据=摸鱼;没检测到状态目录=提示用户(而非以为 app 坏了)
-            pet.setCaption(r.present ? "摸鱼中" : "未检测到 codex-plugin-cc 任务")
+            // 区分:有插件数据=摸鱼+药丸;没检测到状态目录=提示用户并隐藏药丸(而非以为 app 坏了)
+            if r.present {
+                pet.setCaption("摸鱼中"); pet.setPill("无任务", kind: .neutral)
+            } else {
+                pet.setCaption("未检测到 codex-plugin-cc 任务"); pet.hidePill()
+            }
         }
     }
 
