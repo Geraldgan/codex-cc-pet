@@ -160,6 +160,20 @@ enum PillKind {
     }
 }
 
+/// 让单行文本在 NSTextField 里垂直居中(状态药丸用;NSTextField 默认不竖直居中)
+final class VCenterTextFieldCell: NSTextFieldCell {
+    override func titleRect(forBounds rect: NSRect) -> NSRect {
+        var r = super.titleRect(forBounds: rect)
+        let h = cellSize(forBounds: rect).height
+        r.origin.y = rect.origin.y + (rect.height - h) / 2
+        r.size.height = h
+        return r
+    }
+    override func drawInterior(withFrame cellFrame: NSRect, in controlView: NSView) {
+        super.drawInterior(withFrame: titleRect(forBounds: cellFrame), in: controlView)
+    }
+}
+
 /// 渲染宠物:渐变圆角卡片 + emoji + 话术文字 + 底部状态药丸;动画走 Core Animation。
 final class PetView: NSView {
     private let face = NSTextField(labelWithString: "🐤")
@@ -213,15 +227,17 @@ final class PetView: NSView {
         label.cell?.truncatesLastVisibleLine = true // 折到上限后末行省略号
         addSubview(label)
 
-        // 底部状态药丸
-        pill.alignment = .center
-        pill.backgroundColor = .clear
-        pill.isBezeled = false
-        pill.isEditable = false
+        // 底部状态药丸(垂直居中 cell)
+        let pillCell = VCenterTextFieldCell()
+        pillCell.isBezeled = false
+        pillCell.isEditable = false
+        pillCell.drawsBackground = false
+        pillCell.alignment = .center
+        pill.cell = pillCell
+        pill.font = .systemFont(ofSize: 10.5, weight: .semibold)
         pill.wantsLayer = true
         pill.layer?.cornerRadius = 10
         pill.layer?.masksToBounds = true
-        pill.font = .systemFont(ofSize: 10.5, weight: .semibold)
         addSubview(pill)
 
         apply(.idle) // 设默认表情/文案/药丸/动画
@@ -271,10 +287,9 @@ final class PetView: NSView {
     private func layoutContent() {
         let sidePad: CGFloat = 16
         let capWidth = bounds.width - 2 * sidePad
-        let measured = label.attributedStringValue.boundingRect(
-            with: NSSize(width: capWidth, height: 200),
-            options: [.usesLineFragmentOrigin, .usesFontLeading]).height
-        let capH = min(ceil(measured), 56) // 话术最多约 3 行
+        // 用 NSTextField 自身布局算高度:按真实换行、受 maximumNumberOfLines(=3)约束,最准
+        label.preferredMaxLayoutWidth = capWidth
+        let capH = ceil(label.intrinsicContentSize.height) + 1
 
         let emojiH: CGFloat = 44, gap: CGFloat = 4
         let zoneLow: CGFloat = 42         // 药丸区上沿(药丸 y12+高20+间隙10)
@@ -355,7 +370,7 @@ final class PetView: NSView {
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var panel: NSPanel!
-    private let pet = PetView(frame: NSRect(x: 0, y: 0, width: 230, height: 172))
+    private let pet = PetView(frame: NSRect(x: 0, y: 0, width: 230, height: 182))
     private let watcher = JobWatcher()
     private var timer: Timer?
     /// 上一轮应用的情绪键,避免同情绪重复 apply 而重置动画
