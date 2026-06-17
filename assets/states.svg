@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="300" viewBox="0 0 960 300" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#20242e"/>
+      <stop offset="1" stop-color="#15171f"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#363b46"/>
+      <stop offset="1" stop-color="#262a33"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#000" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <rect width="960" height="300" rx="22" fill="url(#bg)"/>
+  <text x="36" y="44" fill="#e8eaed" font-size="20" font-weight="700">codex-cc-pet · 四种状态</text>
+  <text x="36" y="68" fill="#9aa0aa" font-size="13">跟着 codex-plugin-cc 的后台任务实时变化</text>
+
+  <!-- 卡片组 -->
+  <g filter="url(#shadow)">
+    <!-- 摸鱼 -->
+    <g transform="translate(36,96)">
+      <rect width="206" height="172" rx="18" fill="url(#card)" stroke="#ffffff" stroke-opacity="0.10"/>
+      <text x="103" y="78" font-size="52" text-anchor="middle">🐤</text>
+      <text x="103" y="118" fill="#ffffff" fill-opacity="0.9" font-size="15" font-weight="600" text-anchor="middle">摸鱼中</text>
+      <rect x="63" y="136" width="80" height="22" rx="11" fill="#3a3f4a"/>
+      <text x="103" y="151" fill="#aeb4be" font-size="11" text-anchor="middle">无任务</text>
+    </g>
+    <!-- 干活 -->
+    <g transform="translate(266,96)">
+      <rect width="206" height="172" rx="18" fill="url(#card)" stroke="#ffffff" stroke-opacity="0.10"/>
+      <text x="103" y="70" font-size="46" text-anchor="middle">🐤</text>
+      <text x="103" y="104" fill="#ffffff" fill-opacity="0.92" font-size="11.5" text-anchor="middle">正在跑 R2 门禁,</text>
+      <text x="103" y="121" fill="#ffffff" fill-opacity="0.92" font-size="11.5" text-anchor="middle">校验 skeleton 子区域…</text>
+      <rect x="58" y="138" width="90" height="22" rx="11" fill="#2f4a6b"/>
+      <text x="103" y="153" fill="#9ec5ff" font-size="11" text-anchor="middle">运行中 · 话术</text>
+    </g>
+    <!-- 搞定 -->
+    <g transform="translate(496,96)">
+      <rect width="206" height="172" rx="18" fill="url(#card)" stroke="#ffffff" stroke-opacity="0.10"/>
+      <text x="103" y="78" font-size="52" text-anchor="middle">🎉</text>
+      <text x="103" y="118" fill="#ffffff" fill-opacity="0.9" font-size="15" font-weight="600" text-anchor="middle">搞定!</text>
+      <rect x="60" y="136" width="86" height="22" rx="11" fill="#1f4d33"/>
+      <text x="103" y="151" fill="#7ee2a8" font-size="11" text-anchor="middle">completed</text>
+    </g>
+    <!-- 崩了 -->
+    <g transform="translate(726,96)">
+      <rect width="206" height="172" rx="18" fill="url(#card)" stroke="#ffffff" stroke-opacity="0.10"/>
+      <text x="103" y="78" font-size="52" text-anchor="middle">😵</text>
+      <text x="103" y="118" fill="#ffffff" fill-opacity="0.9" font-size="15" font-weight="600" text-anchor="middle">崩了</text>
+      <rect x="66" y="136" width="74" height="22" rx="11" fill="#5a2730"/>
+      <text x="103" y="151" fill="#ff9aa6" font-size="11" text-anchor="middle">failed</text>
+    </g>
+  </g>
+</svg>

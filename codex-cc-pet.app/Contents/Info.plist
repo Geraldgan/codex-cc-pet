@@ -10,6 +10,8 @@
     <string>com.geraldgan.codex-cc-pet</string>
     <key>CFBundleExecutable</key>
     <string>codex-cc-pet</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleVersion</key>

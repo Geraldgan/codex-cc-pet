@@ -6,6 +6,8 @@
 
 单一自包含 `.app`:**双击运行,拷到别的 Mac 也直接双击运行**(通用二进制,Intel / Apple Silicon 通吃),不依赖 node、无需安装脚本。
 
+![codex-cc-pet 四种状态](assets/states.svg)
+
 ## 前置条件
 
 本工具**只服务于 codex-plugin-cc**(Claude Code × Codex 的插件)。它读取该插件写在本地的 job 状态;**不针对 Codex CLI / Codex 桌面版**——单用那些不会有数据。
@@ -33,6 +35,10 @@
 | 崩了(刚 failed) | 😵 抖动(6s) | ⚠️ 系统通知 + 摘要 |
 
 实时话术取自当前活跃 job 的 `logFile` 尾部最新一条 `Assistant message` 旁白。
+
+## 它怎么工作
+
+![工作流](assets/flow.svg)
 
 ## 搬到其他电脑
 

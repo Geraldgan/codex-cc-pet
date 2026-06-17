@@ -21,3 +21,13 @@ else
 fi
 chmod +x "$OUT"
 lipo -info "$OUT"
+
+# --- 生成 app 图标(make-icon.swift → iconset → AppIcon.icns)---
+RES="$DIR/codex-cc-pet.app/Contents/Resources"
+mkdir -p "$RES"
+iconset="$tmp/AppIcon.iconset"
+mkdir -p "$iconset"
+swiftc -O "$DIR/make-icon.swift" -o "$tmp/makeicon"
+"$tmp/makeicon" "$iconset" >/dev/null
+iconutil -c icns "$iconset" -o "$RES/AppIcon.icns"
+echo "✅ 图标 AppIcon.icns 已生成"
