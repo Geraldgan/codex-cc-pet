@@ -1,66 +1,68 @@
 # codex-cc-pet
 
-> A tiny macOS desktop companion for [**codex-plugin-cc**](https://github.com/openai/codex-plugin-cc) — a pet that reacts to your Codex background jobs and notifies you when they finish.
+**English** | [中文](README.zh-CN.md)
 
-[codex-plugin-cc](https://github.com/openai/codex-plugin-cc) 的桌面伴侣。在 Claude Code 里用该插件把任务派给 Codex 后台跑时,这只宠物会**实时反映任务状态、跑完弹系统通知**——补「后台 job 跑完无感知、得手动 `/codex:status` 查」的缺口。
+> A tiny macOS desktop companion for [**codex-plugin-cc**](https://github.com/openai/codex-plugin-cc) — a pet that reflects your Codex background-job status and notifies you when jobs finish.
 
-单一自包含 `.app`:**双击运行,拷到别的 Mac 也直接双击运行**(通用二进制,Intel / Apple Silicon 通吃),不依赖 node、无需安装脚本。
+When you delegate tasks to Codex in the background via the plugin (inside Claude Code), this pet **shows the live status and pops a system notification when a job finishes** — filling the gap where finished background jobs go unnoticed and you have to keep running `/codex:status`.
 
-![codex-cc-pet 四种状态](assets/states.svg)
+A single self-contained `.app`: **double-click to run, copy it to any Mac and double-click there too** (universal binary, Intel / Apple Silicon). No node, no install scripts.
 
-## 前置条件
+![codex-cc-pet states](assets/states.svg)
 
-本工具**只服务于 codex-plugin-cc**(Claude Code × Codex 的插件)。它读取该插件写在本地的 job 状态;**不针对 Codex CLI / Codex 桌面版**——单用那些不会有数据。
+## Requirements
+
+This tool **only works with [codex-plugin-cc](https://github.com/openai/codex-plugin-cc)** (the Claude Code × Codex plugin). It reads the job state that plugin writes locally; it does **not** target the Codex CLI or the Codex desktop app — using those alone produces no data.
 
 - macOS 12+
-- 已安装并在用 [codex-plugin-cc](https://github.com/openai/codex-plugin-cc),且通过它派后台任务(`/codex:rescue` 等)
+- [codex-plugin-cc](https://github.com/openai/codex-plugin-cc) installed and used to dispatch background jobs (`/codex:rescue`, etc.)
 
-## 用法
+## Usage
 
-- **运行**:双击 `codex-cc-pet.app`(或 `open codex-cc-pet.app`)。
-- **移动**:拖窗体背景。
-- **退出**:窗体上双击。
-- **开机自启**:系统设置 → 通用 → 登录项 → 「+」→ 选 `codex-cc-pet.app`。
-- **通知权限**:任务首次跑完弹通知时,系统会问一次,放行即可。
+- **Run**: double-click `codex-cc-pet.app` (or `open codex-cc-pet.app`).
+- **Move**: drag the card background.
+- **Quit**: double-click the card.
+- **Launch at login**: System Settings → General → Login Items → `+` → select `codex-cc-pet.app`.
+- **Notifications**: macOS will ask for permission the first time a job finishes — allow it once.
 
-## 行为
+## Behavior
 
-每 3 秒只读扫描插件的 job 状态文件(`~/.claude/plugins/data/codex-inline/state/<项目>/state.json`):
+Every 3 seconds it read-only scans the plugin's job state files (`~/.claude/plugins/data/codex-inline/state/<project>/state.json`):
 
-| 状态 | 宠物 | 通知 |
+| State | Pet | Notification |
 |---|---|---|
-| 摸鱼(无 job) | 🐤 慢速呼吸浮动 | — |
-| 干活(≥1 在跑) | 🐤 加速浮动,气泡显示 **Codex 实时话术** | — |
-| 搞定(刚 completed) | 🎉 跳一下(5s) | ✅ 系统通知 + 摘要 |
-| 崩了(刚 failed) | 😵 抖动(6s) | ⚠️ 系统通知 + 摘要 |
+| Idle (no jobs) | 🐤 slow breathing bob | — |
+| Working (≥1 running) | 🐤 faster bob, bubble shows **live Codex narration** | — |
+| Done (just completed) | 🎉 hop (5s) | ✅ system notification + summary |
+| Failed (just failed) | 😵 shake (6s) | ⚠️ system notification + summary |
 
-实时话术取自当前活跃 job 的 `logFile` 尾部最新一条 `Assistant message` 旁白。
+The live narration comes from the latest `Assistant message` line in the active job's `logFile`.
 
-## 它怎么工作
+## How it works
 
-![工作流](assets/flow.svg)
+![flow](assets/flow.svg)
 
-## 搬到其他电脑
+## Move to another Mac
 
-直接拷 `codex-cc-pet.app` 过去双击。二进制是通用架构,目标机**无需 node、无需 swiftc、无需安装**。
+Just copy `codex-cc-pet.app` over and double-click. The binary is universal, so the target machine needs **no node, no swiftc, no install**.
 
-> 首次打开未签名 app 若被 Gatekeeper 拦:右键 → 打开,或「系统设置 → 隐私与安全性 → 仍要打开」。
+> If Gatekeeper blocks the unsigned app on first launch: right-click → Open, or System Settings → Privacy & Security → Open Anyway.
 
-## 从源码构建
+## Build from source
 
 ```bash
-./build.sh   # 把 codex-cc-pet.swift 编译成通用二进制,放进 codex-cc-pet.app
+./build.sh   # compiles codex-cc-pet.swift into a universal binary inside codex-cc-pet.app
 ```
 
-需 Xcode Command Line Tools(`xcode-select --install`,提供 swiftc)。仅开发/构建机需要,分发出去的 `.app` 不需要。
+Requires Xcode Command Line Tools (`xcode-select --install`, provides `swiftc`). Only needed on the build machine — not for running the distributed `.app`.
 
-## 文件
+## Files
 
-| 文件 | 说明 |
+| File | Description |
 |---|---|
-| `codex-cc-pet.swift` | 全部源码(原生 AppKit,无第三方依赖) |
-| `codex-cc-pet.app` | 可分发应用(`Contents/MacOS/codex-cc-pet` 为编译产物,已 gitignore) |
-| `build.sh` | 重建脚本(通用二进制) |
+| `codex-cc-pet.swift` | All source (native AppKit, no third-party deps) |
+| `codex-cc-pet.app` | Distributable app (`Contents/MacOS/codex-cc-pet` is a build artifact, gitignored) |
+| `build.sh` | Rebuild script (universal binary + icon) |
 
 ## License
 
