@@ -178,13 +178,24 @@ final class PetView: NSView {
         layer?.borderWidth = 1
         layer?.borderColor = NSColor.white.withAlphaComponent(0.10).cgColor
 
-        // 渐变卡片背景(顶浅底深),贴合设计稿
-        gradient.colors = [
-            NSColor(srgbRed: 0.212, green: 0.231, blue: 0.275, alpha: 1).cgColor,
-            NSColor(srgbRed: 0.149, green: 0.165, blue: 0.200, alpha: 1).cgColor,
-        ]
+        // 背景:高斯模糊(透出并模糊桌面)+ 半透明渐变着色 = 磨砂玻璃卡片
+        let blur = NSVisualEffectView(frame: bounds)
+        blur.autoresizingMask = [.width, .height]
+        blur.material = .hudWindow
+        blur.blendingMode = .behindWindow
+        blur.state = .active
+        addSubview(blur)
+
+        let tint = NSView(frame: bounds)
+        tint.autoresizingMask = [.width, .height]
+        tint.wantsLayer = true
         gradient.frame = bounds
-        layer?.insertSublayer(gradient, at: 0)
+        gradient.colors = [ // alpha 越低越透、桌面越明显
+            NSColor(srgbRed: 0.212, green: 0.231, blue: 0.275, alpha: 0.45).cgColor,
+            NSColor(srgbRed: 0.149, green: 0.165, blue: 0.200, alpha: 0.45).cgColor,
+        ]
+        tint.layer?.addSublayer(gradient)
+        addSubview(tint)
 
         face.font = .systemFont(ofSize: 42)
         face.alignment = .center
