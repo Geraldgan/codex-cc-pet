@@ -62,6 +62,10 @@ final class JobWatcher {
                 let status = (job["status"] as? String ?? "").lowercased()
                 let id = job["id"] as? String ?? ""
                 if status == "running" || status == "queued" {
+                    // 防 stale:job 标 running 但其进程已死(插件跑完没更新状态)→ 不算在跑
+                    if let pid = job["pid"] as? Int, pid > 0, !Self.isProcessAlive(pid) {
+                        continue
+                    }
                     running += 1
                     // 记录最新活跃 job 的 logFile(ISO 时间串可按字典序比大小)
                     if let log = job["logFile"] as? String {
@@ -86,6 +90,12 @@ final class JobWatcher {
         seededBaseline = true
         let activity = activeLog.flatMap { Self.latestActivity(logFile: $0.logFile) }
         return (present, running, finished, activity)
+    }
+
+    /// 进程是否存活;用于剔除 stale 的 running job(进程已死但状态没更新)。
+    /// kill(pid,0) 不发信号只探测:0=存在,EPERM=存在但无权限,ESRCH=不存在。
+    private static func isProcessAlive(_ pid: Int) -> Bool {
+        return kill(pid_t(pid), 0) == 0 || errno == EPERM
     }
 
     /// 从 logFile 尾部抽最新一句"话术":优先 Assistant message 旁白,否则最近的命令/改动动作。
